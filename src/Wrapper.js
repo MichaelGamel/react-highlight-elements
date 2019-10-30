@@ -1,43 +1,48 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { Component } from 'react';
 
-function usePrevious(value) {
-  const ref = useRef();
-  useEffect(() => {
-    ref.current = value;
-  });
-  return ref.current;
-}
+class Wrapper extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      data: props.children
+    };
+  }
 
-const Wrapper = ({ children }) => {
-  const prev = usePrevious(children);
-  const [data, setData] = useState(children);
+  componentWillReceiveProps(nextProps) {
+    this.setState({
+      data: nextProps.children.map((c, i) => {
+        if (c.props.children !== this.state.data[i].props.children) {
+          this.changeBack(i);
+          return this.cloneElement(c, i, this.props.color);;
+        }
+        return this.state.data[i];
+      })
+    });
+  }
 
-  useEffect(() => {
-    debugger;
-    if (prev) {
-      setData(
-        children.map((child, i) => {
-          if (child.props.children !== prev[i].props.children) {
-            setTimeout(() => {
-              const newData = [...children];
-              newData[i] = React.cloneElement(child, {
-                className: '',
-                key: i
-              });
-              setData(newData);
-            }, 2000);
-            return React.cloneElement(child, {
-              className: 'red',
-              key: i
-            });
+  changeBack(index) {
+    setTimeout(() => {
+      this.setState({
+        data: this.state.data.map((c, i) => {
+          if (index === i) {
+            return this.cloneElement(c, i, '');
           }
-          return child;
+          return this.state.data[i];
         })
-      );
-    }
-  }, [children]);
+      });
+    }, this.props.timeout);
+  }
 
-  return <>{data}</>;
-};
+  cloneElement = (child, key, className) => {
+    return React.cloneElement(child, {
+      className,
+      key
+    });
+  };
+
+  render() {
+    return <>{this.state.data}</>;
+  }
+}
 
 export default Wrapper;
